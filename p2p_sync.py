@@ -5,37 +5,7 @@ import numpy as np
 import torch.distributed as dist
 import multiprocessing as mp
 from multiprocessing import Process, Manager
-
-
-def create_exponential_graph(n):
-    G = dict()
-    log_n = int(np.log2(n))
-    edges = []
-    for i in range(n):
-        G[i] = dict()
-        G[i]["N_i"] = []
-        G[i]["is_ready_2_com"] = False
-    for i in range(n):
-        for k in range(log_n):
-            j = (i + 2**k)%n
-            if j not in G[i]["N_i"]:
-                G[i]["N_i"].append(j)
-            if i not in G[j]["N_i"]:
-                G[j]["N_i"].append(i)
-    
-    return G
-
-def create_cycle_graph(n):
-    G = dict()
-    for i in range(n):
-        G[i] = dict()
-        if i%2 == 0:
-            G[i]["N_i"] = [(i+1)%n, (i-1)%n]
-        else:
-            G[i]["N_i"] = [(i-1)%n, (i+1)%n]
-        G[i]["is_ready_2_com"] = False
-        G[i]["count"] = 0
-    return G
+from graph_utils import ExponentialGraph, CycleGraph
 
 def sync_process(rank, world_size, rank_other, new_grads, barrier_sync_averaging, log):
     # initialize the process group for rank communications
@@ -103,11 +73,11 @@ def master_process(world_size, nb_grad_tot_goal, log, graph_topology):
     tensor_rank_0 = torch.zeros(1)
     tensor_rank_1 = torch.zeros(1)
     if graph_topology != "complete":
-        # init a networkx graph
+        # init a graph object
         if graph_topology == "cycle":
-            G = create_cycle_graph(world_size)
+            G = CycleGraph(world_size)
         elif graph_topology == "exponential":
-            G = create_exponential_graph(world_size)
+            G = ExponentialGraph(world_size)
     # while the total number of grad is not reached
     while nb_tot_grad_so_far.value < nb_grad_tot_goal:
         if graph_topology == "complete":
@@ -128,28 +98,18 @@ def master_process(world_size, nb_grad_tot_goal, log, graph_topology):
             i = queue.get()
             # init a neighbor var
             j_ready = None
-            # gather its list of neighbors in the graph and shuffle it
-            if G[i]["count"]%2 == i%2:
-                N_i = [(i-1)%world_size]
-            else:
-                N_i = [(i+1)%world_size]
-            #N_i = G[i]["N_i"]
-            #random.shuffle(N_i)
-            for j in N_i:
-                # if j is ready to com
-                if G[j]["is_ready_2_com"]:
-                    # put the bool back to False
-                    G[j]["is_ready_2_com"] = False
-                    j_ready = j
-                    # reverse the list
-                    #G[i]["N_i"].reverse()
-                    break
-            # increment thhe count
-            G[i]["count"] += 1
-            # if no neighbor of i is ready
+            # gather the next rank i is supposed to communicate to
+            j = G.next_communication(i)
+            # if j is ready to com
+            if G.nodes[j]["is_ready_2_com"]:
+                # put the bool back to False
+                G.nodes[j]["is_ready_2_com"] = False
+                j_ready = j
+                break
+            # if the neighbor of i for next step is not ready
             if j_ready is None:
                 # we signal that i is ready in the graph
-                G[i]["is_ready_2_com"] = True
+                G.nodes[i]["is_ready_2_com"] = True
             else:
                 # we perform the communication between i and j
                 tensor_rank_0[0] = i
