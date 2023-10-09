@@ -12,8 +12,14 @@ class ADP(nn.Module):
     """
     A wrapper around the model, with added functions to handle asynchronous communications.
     """
-    def __init__(self, model, rank, local_rank, world_size, nb_grad_tot_goal, log, rate_com, apply_acid, acid_params, criterion, optimizer, data_iterator, momentum, dataset_name, graph_topology):
+    def __init__(self, model, rank, local_rank, world_size, nb_grad_tot_goal, log, rate_com, apply_acid, acid_params, criterion, optimizer, data_iterator, momentum, dataset_name, graph_topology, deterministic_com):
         super().__init__()
+        
+        # Check for argument consistency
+        # first, verify that when are not applying the stochastic algo,
+        # we make rate_com com for each grad step with an integer rate_com.
+        if int(rate_com) != rate_com and deterministic_com:
+            raise ValueError("A non integer number of communications has been set in a non stochastic setting.")
 
         self.module = model
         self.rank = rank
@@ -23,6 +29,7 @@ class ADP(nn.Module):
         self.log = log
         self.rate_com = rate_com
         self.graph_topology = graph_topology
+        self.deterministic_com = deterministic_com
         # loads the model parameters in share memory so that both grad and com processes edit the same tensor
         params = self.get_weights()
         params = params.to(self.local_rank)
@@ -172,6 +179,7 @@ class ADP(nn.Module):
             self.t_last_spike,
             self.delta_t_grad,
             self.beta_tilde,
+            self.deterministic_com,
             ),
         )
         averaging_process.start()

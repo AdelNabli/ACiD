@@ -66,6 +66,14 @@ def get_args_parser():
         help="Whether or not to normalize gradients before taking the grad step (for stability issues).",
     )
     parser.add_argument(
+        "--deterministic_coms",
+        default=False,
+        action='store_true',
+        help="Whether or not to implement Poisson Point Processes for the coms. \
+              If True, will make sure there are 'rate_com' communications between EACH gradient steps (not in expectation). \
+              Will raise an error if True AND 'rate_com' is not an integer.",
+    )
+    parser.add_argument(
         "--acid_params",
         default=(0.035, 7.26),
         type=float,
@@ -187,7 +195,7 @@ def run(rank, local_rank, world_size, n_nodes, master_addr, master_port, args):
         args.dataset_name,
     )
     # Initialize the worker
-    adp_model = ADP(model, rank, local_rank, world_size, nb_grad_tot, log, args.rate_com, args.apply_acid, args.acid_params, criterion, optimizer, data_iterator, args.momentum, args.dataset_name, args.graph_topology)
+    adp_model = ADP(model, rank, local_rank, world_size, nb_grad_tot, log, args.rate_com, args.apply_acid, args.acid_params, criterion, optimizer, data_iterator, args.momentum, args.dataset_name, args.graph_topology, args.deterministic_com)
     path_tensorboard = args.path_logs + '/tensorboard/' + id_run.decode()
     writer = SummaryWriter(path_tensorboard)
     

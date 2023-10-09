@@ -96,6 +96,7 @@ def gossip_process(rank,
                    t_last_spike,
                    delta_t_grad,
                    beta_tilde,
+                   deterministic_com,
                   ):
     """
     Gossip routine for the p2p averaging of the model's parameters.
@@ -165,8 +166,13 @@ def gossip_process(rank,
                     # Wait for 1 averaging step before grad
                     barrier_com_grad.wait()
                     barrier_com_grad.reset()
-                    # use poisson law to implement the Poisson Point Processes for communications
-                    count_coms_next_wait += np.random.poisson(lam=rate_com, size=None)
+                    # if coms are deterministic
+                    if deterministic_com:
+                        # add the precise amount of com before the next grad step
+                        count_coms_next_wait += rate_com
+                    else:
+                        # else, uses poisson law to implement the Poisson Point Processes for communications
+                        count_coms_next_wait += np.random.poisson(lam=rate_com, size=None)
             else:
                 barrier_com_grad.wait()
             # re-initialize the mp.Value var for next round
