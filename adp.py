@@ -120,7 +120,6 @@ class ADP(nn.Module):
             
         if normalize_grads:
             nn.utils.clip_grad_norm_(self.module.parameters(), 1.0)
-        # lock the params for the grad update
         optimizer.step()
         
         # take a grad step on the momentum var
