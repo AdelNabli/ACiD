@@ -1,6 +1,5 @@
 import scipy
 import numpy as np
-import networkx as nx
 
 
 class Graph(object):
@@ -27,6 +26,8 @@ class Graph(object):
             self.nodes[i]["count_iter"] = 0
         # assumes a regular graph
         self.len_cycle = len(self.nodes[0]["N_i"])
+        # compute the set of undirected edges
+        self.edges = self.set_edges()
     
     def next_communication(self, rank):
         """
@@ -45,6 +46,17 @@ class Graph(object):
         Returns a list of neighbors rightly ordered according to rank and the graph's topology.
         """
         raise NotImplementedError
+    
+    def set_edges(self,):
+        """
+        returns a list of the undirected edges
+        """
+        edges = []
+        for i in range(self.world_size):
+            for j in self.nodes[i]["N_i"]:
+                if (i,j) or (j,i) not in edges:
+                    edges.append((i,j))
+        return edges
         
 
 class CycleGraph(Graph):
@@ -87,6 +99,31 @@ class ExponentialGraph(Graph):
             else:
                 N_rank.append((rank + 2**k)%self.world_size)
         return N_rank
+    
+    
+def compute_laplacian(G, rate_com):
+    """
+    Given a Graph and a communication rate,
+    returns the corresponding Laplacian matrix so that 
+    the effective resistance and the algebraic connectivity can be computed.
+    """
+    n = G.world_size
+    # init a 0 matrix for the symmetric stochastic weight matrix modeling the connectivity
+    W = np.zeros((n,n))
+    # for each node i
+    for i in range(n):
+        # visit all of its neighbors j
+        N_i = G.nodes[i]["N_i"]
+        len_N_i = len(N_i)
+        for j in N_i:
+            # add the correponding weight to the weight matrix
+            W[i,j] += 1/len_N_i
+    # init the laplacian for a "unit" communication rate
+    L = np.eye(n) - W
+    # multiply it by the right constant
+    L *= rate_com
+    
+    return L
 
 
 def compute_graph_resistance(L, G):
@@ -118,3 +155,21 @@ def compute_graph_resistance(L, G):
             R_max = R_ij
 
     return R_max
+
+
+def compute_algebraic_connectivity(L):
+    
+    # smallest strictly positive eigenvalue of L
+    chi_1 = 1 / scipy.linalg.eigh(L)[0][1]
+    
+    return chi_1
+
+
+def compute_acid_constant(L, G):
+    
+    chi_1 = compute_algebraic_connectivity(L)
+    chi_2 = compute_graph_resistance(L, G)
+    eta = 0.5/np.sqrt(chi_1 * chi_2)
+    beta_tilde = 0.5*np.sqrt(chi_1 / chi_2)
+    
+    return eta, beta_tilde
