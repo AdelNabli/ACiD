@@ -15,9 +15,9 @@ class ADP(nn.Module):
     def __init__(self, model, rank, local_rank, world_size, nb_grad_tot_goal, log, rate_com, apply_acid, acid_params, criterion, optimizer, data_iterator, momentum, dataset_name, graph_topology, deterministic_com):
         super().__init__()
         
-        # Check for argument consistency
-        # first, verify that when are not applying the stochastic algo,
-        # we make rate_com com for each grad step with an integer rate_com.
+        # Check for argument consistency.
+        # first, verify that when we are applying the deterministic algo,
+        # we make a rate_com nb of com for each grad step that is integer.
         if int(rate_com) != rate_com and deterministic_com:
             raise ValueError("A non integer number of communications has been set in a non stochastic setting.")
 
