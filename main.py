@@ -371,6 +371,8 @@ if __name__ == "__main__":
     # display info
     if rank == 0:
         print(">>> Training on ", n_nodes, " nodes and ", world_size)
+        print("Arguments:")
+        print(args)
     print(
         "- Process {} corresponds to GPU {} of node {}".format(
             rank, local_rank, NODE_ID
