@@ -22,16 +22,18 @@ def do_send(
     Expects that the peer with whom we communicate runs the symetric function
     receive THEN send.
     """
-   
+
     # sends and receives the params to and from an other worker
     dist.send(params_com, other_rank, process_group)
     dist.recv(params_other_worker, other_rank, process_group)
     if apply_acid:
         # retrieve the times
-        t_old  = t_last_spike.value
+        t_old = t_last_spike.value
         t_new = time.time()
         # apply continuous momentum
-        acid_ode(params_com, params_com_tilde, ode_matrix, t_old, t_new, delta_t_grad.value)
+        acid_ode(
+            params_com, params_com_tilde, ode_matrix, t_old, t_new, delta_t_grad.value
+        )
         # update the t spike var
         t_last_spike.value = t_new
         # update params_com_tilde
@@ -57,16 +59,18 @@ def do_recv(
     Expects that the peer with whom we communicate runs the symetric function
     send THEN receive.
     """
-   
+
     # receives and sends the params to and from an other worker
     dist.recv(params_other_worker, other_rank, process_group)
     dist.send(params_com, other_rank, process_group)
     if apply_acid:
         # retrieve the times
-        t_old  = t_last_spike.value
+        t_old = t_last_spike.value
         t_new = time.time()
         # apply continuous momentum
-        acid_ode(params_com, params_com_tilde, ode_matrix, t_old, t_new, delta_t_grad.value)
+        acid_ode(
+            params_com, params_com_tilde, ode_matrix, t_old, t_new, delta_t_grad.value
+        )
         # update the t spike var
         t_last_spike.value = t_new
         # update params_com_tilde
@@ -74,30 +78,31 @@ def do_recv(
     # inplace average of parameters
     params_com.lerp_(params_other_worker, 0.5)
 
-    
-def gossip_process(rank,
-                   local_rank,
-                   world_size,
-                   rank_other,
-                   params_com,
-                   params_com_other,
-                   barrier_sync_averaging,
-                   continue_grad_routine,
-                   barrier_end_init,
-                   barrier_com_grad,
-                   log,
-                   com_history,
-                   count_grads_local,
-                   count_coms_local,
-                   rate_com,
-                   apply_acid,
-                   params_com_tilde,
-                   ode_matrix,
-                   t_last_spike,
-                   delta_t_grad,
-                   beta_tilde,
-                   deterministic_com,
-                  ):
+
+def gossip_process(
+    rank,
+    local_rank,
+    world_size,
+    rank_other,
+    params_com,
+    params_com_other,
+    barrier_sync_averaging,
+    continue_grad_routine,
+    barrier_end_init,
+    barrier_com_grad,
+    log,
+    com_history,
+    count_grads_local,
+    count_coms_local,
+    rate_com,
+    apply_acid,
+    params_com_tilde,
+    ode_matrix,
+    t_last_spike,
+    delta_t_grad,
+    beta_tilde,
+    deterministic_com,
+):
     """
     Gossip routine for the p2p averaging of the model's parameters.
     """
@@ -133,29 +138,31 @@ def gossip_process(rank,
                 break
             # averaging with rank_other
             if rank_other_here < rank:
-                do_send(params_com,
-                        params_com_other,
-                        process_group,
-                        rank_other_here,
-                        apply_acid,
-                        params_com_tilde,
-                        ode_matrix,
-                        t_last_spike,
-                        delta_t_grad,
-                        beta_tilde,
-                       )
+                do_send(
+                    params_com,
+                    params_com_other,
+                    process_group,
+                    rank_other_here,
+                    apply_acid,
+                    params_com_tilde,
+                    ode_matrix,
+                    t_last_spike,
+                    delta_t_grad,
+                    beta_tilde,
+                )
             else:
-                do_recv(params_com,
-                        params_com_other,
-                        process_group,
-                        rank_other_here,
-                        apply_acid,
-                        params_com_tilde,
-                        ode_matrix,
-                        t_last_spike,
-                        delta_t_grad,
-                        beta_tilde,
-                       )
+                do_recv(
+                    params_com,
+                    params_com_other,
+                    process_group,
+                    rank_other_here,
+                    apply_acid,
+                    params_com_tilde,
+                    ode_matrix,
+                    t_last_spike,
+                    delta_t_grad,
+                    beta_tilde,
+                )
             # logs the communication
             count_coms_local.value += 1
             count_com_rank = com_history[rank_other_here]
@@ -172,7 +179,9 @@ def gossip_process(rank,
                         count_coms_next_wait += rate_com
                     else:
                         # else, uses poisson law to implement the Poisson Point Processes for communications
-                        count_coms_next_wait += np.random.poisson(lam=rate_com, size=None)
+                        count_coms_next_wait += np.random.poisson(
+                            lam=rate_com, size=None
+                        )
             else:
                 barrier_com_grad.wait()
             # re-initialize the mp.Value var for next round
@@ -195,4 +204,3 @@ def gossip_process(rank,
         torch.cuda.synchronize()
         dist.all_reduce(params_com, group=process_group, op=dist.ReduceOp.SUM)
         params_com.mul_(1 / world_size)
-    

@@ -4,7 +4,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def init_momentum_var(model, criterion, optimizer, data_iterator, local_rank, delta_t_grad, momentum, dataset_name):
+def init_momentum_var(
+    model,
+    criterion,
+    optimizer,
+    data_iterator,
+    local_rank,
+    delta_t_grad,
+    momentum,
+    dataset_name,
+):
     """
     Take a grad step per worker to initialize the momentum in the SGD optimizer.
     Use this first grad step to initialize the observed value of "delta_t_grad",
@@ -15,7 +24,7 @@ def init_momentum_var(model, criterion, optimizer, data_iterator, local_rank, de
     data, target = data.to(local_rank), target.to(local_rank)
     optimizer.zero_grad()
     output = model(data)
-    if dataset_name == 'CIFAR10':
+    if dataset_name == "CIFAR10":
         output = F.log_softmax(output, dim=1)
     loss = criterion(output, target)
     loss.backward()
@@ -54,11 +63,16 @@ def load_momentum(mom_vec, model, optimizer, momentum):
             ].view_as(mom)
             # Increment the pointer
             pointer += num_mom
-            
+
 
 @torch.no_grad()
 def acid_ode(
-    params_com, params_com_tilde, ode_matrix, t_old, t_new, delta_t_grad,
+    params_com,
+    params_com_tilde,
+    ode_matrix,
+    t_old,
+    t_new,
+    delta_t_grad,
 ):
     """
     Integrate the ODE for the continuous momentum.

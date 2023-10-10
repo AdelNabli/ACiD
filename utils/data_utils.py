@@ -2,19 +2,22 @@ import os
 import torch
 import torchvision
 import torch.nn.functional as F
-#from fedlab.utils.dataset.partition import CIFAR10Partitioner
+# from fedlab.utils.dataset.partition import CIFAR10Partitioner
 
 
 class Partition(object):
-    """ Dataset partitioning helper """
+    """Dataset partitioning helper"""
+
     def __init__(self, data, rank, world_size, dir_alpha=0.3, seed=123):
         self.data = data
-        hetero_dir_part = CIFAR10Partitioner(data.targets,
-                                             world_size,
-                                             balance=None,
-                                             partition="dirichlet",
-                                             dir_alpha=dir_alpha,
-                                             seed=seed)
+        hetero_dir_part = CIFAR10Partitioner(
+            data.targets,
+            world_size,
+            balance=None,
+            partition="dirichlet",
+            dir_alpha=dir_alpha,
+            seed=seed,
+        )
         self.indices = hetero_dir_part.client_dict[rank]
 
     def __len__(self):
@@ -25,7 +28,14 @@ class Partition(object):
         return self.data[data_idx]
 
 
-def data_loader(rank, world_size, train=True, batch_size=256, dataset_name="CIFAR10", non_iid_data=False):
+def data_loader(
+    rank,
+    world_size,
+    train=True,
+    batch_size=256,
+    dataset_name="CIFAR10",
+    non_iid_data=False,
+):
     """
     Create a dataloader for CIFAR10 and ImageNet train and test datasets and returns it.
 
@@ -33,7 +43,7 @@ def data_loader(rank, world_size, train=True, batch_size=256, dataset_name="CIFA
         - train (bool): whether to return the train or test set.
         - batch_size (int): batch_size to use for the dataloader.
         - dataset_name (str): supports 'CIFAR10' and 'ImageNet'.
-        - non_iid_data (bool): whether or not to use iid data. 
+        - non_iid_data (bool): whether or not to use iid data.
                            If False, each worker has access to the whole training data.
                            If True, an unbalanced dirichlet partition is performed.
 
@@ -51,7 +61,7 @@ def data_loader(rank, world_size, train=True, batch_size=256, dataset_name="CIFA
         dataset = train_data(path_data, dataset_name)
     else:
         dataset = test_data(path_data, dataset_name)
-    n_batch_per_epoch = int(len(dataset)/batch_size)
+    n_batch_per_epoch = int(len(dataset) / batch_size)
     # if we have to partition the training data of CIFAR10 in a non iid way
     if dataset_name == "CIFAR10" and train and non_iid_data:
         dataset = Partition(dataset, rank, world_size)
@@ -162,7 +172,9 @@ def test_data(path_data, dataset_name="CIFAR10"):
     return dataset_test
 
 
-def evaluate(model, test_loader, criterion, rank=0, print_message=True, dataset_name='CIFAR10'):
+def evaluate(
+    model, test_loader, criterion, rank=0, print_message=True, dataset_name="CIFAR10"
+):
     """
     Evaluate the model on the test data, and returns its accuracy.
 
@@ -171,6 +183,7 @@ def evaluate(model, test_loader, criterion, rank=0, print_message=True, dataset_
         - test_loader (torch.utils.DataLoader): the test dataloader.
         - rank (int): the id of the GPU device the model is loaded on.
         - print_message (bool): whether or not to print the statistics.
+        - dataset_name (str): whether or not = 'CIFAR10', to apply logsoftmax after the model outputs.
 
     Returns:
         - test_loss (float): the average loss over the whole test set.
@@ -188,7 +201,7 @@ def evaluate(model, test_loader, criterion, rank=0, print_message=True, dataset_
             # load data to device
             data, target = data.to(rank), target.to(rank)
             output = model(data)
-            if dataset_name == 'CIFAR10':
+            if dataset_name == "CIFAR10":
                 output = F.log_softmax(output, dim=1)
             # sum up batch loss
             test_loss += criterion(output, target).item()

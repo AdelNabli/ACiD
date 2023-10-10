@@ -7,29 +7,35 @@ import multiprocessing as mp
 from multiprocessing import Process, Manager
 from utils.graph_utils import ExponentialGraph, CycleGraph
 
+
 def sync_process(rank, world_size, rank_other, new_grads, barrier_sync_averaging, log):
     # initialize the process group for rank communications
     process_group = dist.init_process_group(
-        backend="gloo", init_method='tcp://'+os.environ["MASTER_ADDR"]+':'+str(int(os.environ["MASTER_PORT"])+1),
-        rank=rank, world_size=2*world_size + 1
+        backend="gloo",
+        init_method="tcp://"
+        + os.environ["MASTER_ADDR"]
+        + ":"
+        + str(int(os.environ["MASTER_PORT"]) + 1),
+        rank=rank,
+        world_size=2 * world_size + 1,
     )
-    
+
     while True:
         # initialize a tensor to send master process
         # use the number of grad steps done by worker rank since last communication as message
         # we use the same tensor as placeholder to receive the other rank
-        tensor_other_rank = torch.ones(1)*new_grads.value
+        tensor_other_rank = torch.ones(1) * new_grads.value
         # send a tensor to master to signal worker nb rank is available to communicate
-        dist.send(tensor_other_rank, rank+world_size, process_group)
+        dist.send(tensor_other_rank, rank + world_size, process_group)
         # re-initialize the new_grads value
         new_grads.value = new_grads.value - int(tensor_other_rank.data)
         # receive the rank from the last process in the group
-        dist.recv(tensor_other_rank, 2*world_size, process_group)
+        dist.recv(tensor_other_rank, 2 * world_size, process_group)
         # changes the rank value localy saved in the mp.Value variable
         rank_other.value = int(tensor_other_rank.data)
         if rank_other.value == -2:
             # signal to the listening process to kil the process
-            dist.send(tensor_other_rank, rank+world_size, process_group)
+            dist.send(tensor_other_rank, rank + world_size, process_group)
             barrier_sync_averaging.abort()
             break
         # wait for the p2p averaging
@@ -40,8 +46,13 @@ def sync_process(rank, world_size, rank_other, new_grads, barrier_sync_averaging
 def listen_given_rank(rank, world_size, queue, nb_tot_grad_so_far, lock, log):
     # initialize the process group for rank communications
     process_group = dist.init_process_group(
-        backend="gloo", init_method='tcp://'+os.environ["MASTER_ADDR"]+':'+str(int(os.environ["MASTER_PORT"])+1),
-        rank=rank+world_size, world_size=2*world_size + 1
+        backend="gloo",
+        init_method="tcp://"
+        + os.environ["MASTER_ADDR"]
+        + ":"
+        + str(int(os.environ["MASTER_PORT"]) + 1),
+        rank=rank + world_size,
+        world_size=2 * world_size + 1,
     )
     tensor_other_rank = torch.zeros(1)
     while tensor_other_rank.data != -2:
@@ -52,20 +63,30 @@ def listen_given_rank(rank, world_size, queue, nb_tot_grad_so_far, lock, log):
         queue.put(rank)
         lock.release()
 
-    
-def master_process(world_size, nb_grad_tot_goal, log, graph_topology, deterministic_neighbor):
+
+def master_process(
+    world_size, nb_grad_tot_goal, log, graph_topology, deterministic_neighbor
+):
     queue = mp.Queue()
     lock = mp.Lock()
-    nb_tot_grad_so_far = mp.Value('i', 0)
+    nb_tot_grad_so_far = mp.Value("i", 0)
     list_processes = []
     for rank in range(world_size):
-        listen_process = Process(target=listen_given_rank, args=(rank, world_size, queue, nb_tot_grad_so_far, lock, log))
+        listen_process = Process(
+            target=listen_given_rank,
+            args=(rank, world_size, queue, nb_tot_grad_so_far, lock, log),
+        )
         listen_process.start()
         list_processes.append(listen_process)
     # initialize the process group for rank communications
     process_group = dist.init_process_group(
-        backend="gloo", init_method='tcp://'+os.environ["MASTER_ADDR"]+':'+str(int(os.environ["MASTER_PORT"])+1),
-        rank=2*world_size, world_size=2*world_size + 1
+        backend="gloo",
+        init_method="tcp://"
+        + os.environ["MASTER_ADDR"]
+        + ":"
+        + str(int(os.environ["MASTER_PORT"]) + 1),
+        rank=2 * world_size,
+        world_size=2 * world_size + 1,
     )
     tuple_of_ranks = []
     tensor_rank_0 = torch.zeros(1)
@@ -120,7 +141,7 @@ def master_process(world_size, nb_grad_tot_goal, log, graph_topology, determinis
                 dist.send(tensor_rank_1, i, process_group)
 
     # when we go out of the while loop, send to everybody the message to stop processes
-    kill_process_signal = torch.ones(1)*(-2)
+    kill_process_signal = torch.ones(1) * (-2)
     for rank in range(world_size):
         dist.send(kill_process_signal, rank, process_group)
 

@@ -45,13 +45,9 @@ def create_model(model_name="resnet18", dataset_name="CIFAR10"):
     # loads the model
     weights = None
     if model_name == "resnet18":
-        model = torchvision.models.resnet18(
-            weights=weights, num_classes=num_classes
-        )
+        model = torchvision.models.resnet18(weights=weights, num_classes=num_classes)
     elif model_name == "resnet50":
-        model = torchvision.models.resnet50(
-            weights=weights, num_classes=num_classes
-        )
+        model = torchvision.models.resnet50(weights=weights, num_classes=num_classes)
     # update the model if need be
     if modified_conv1 is not None:
         model.conv1 = modified_conv1
@@ -119,7 +115,7 @@ def compute_multiplicative_coef_lr(
     # setting return_function to False for that.
     if return_function:
         return lambda step: compute_multiplicative_coef_lr(
-            step*world_size, # assumes that all worker work at the same speed
+            step * world_size,  # assumes that all worker work at the same speed
             n_step_tot,
             n_epoch_if_1_worker,
             lr,

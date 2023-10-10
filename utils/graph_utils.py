@@ -11,7 +11,7 @@ class Graph(object):
     This is to compare to previous work such as AD-PSGD who considered bipartite graphs
     with pre-designed communication schedule.
     """
-    
+
     def __init__(self, world_size, deterministic_neighbor=False):
         self.world_size = world_size
         self.deterministic_neighbor = deterministic_neighbor
@@ -30,7 +30,7 @@ class Graph(object):
         self.len_cycle = len(self.nodes[0]["N_i"])
         # compute the set of undirected edges
         self.edges = self.set_edges()
-    
+
     def next_communication(self, rank):
         """
         returns the rank of the neighbor we are supposed to communicate with,
@@ -39,54 +39,59 @@ class Graph(object):
         if self.deterministic_neighbor:
             # cycles through the list of the neighbors. Thus, suppose that the list is in the "right" order
             # to avoid deadlocks, highlighting the importance of the "create_cycle_neighbors" method.
-            other_rank = [self.nodes[rank]["N_i"][self.nodes[rank]["count_iter"] % self.len_cycle]]
+            other_rank = [
+                self.nodes[rank]["N_i"][self.nodes[rank]["count_iter"] % self.len_cycle]
+            ]
             self.nodes[rank]["count_iter"] += 1
         else:
             random.shuffle(self.nodes[rank]["N_i"])
             other_rank = self.nodes[rank]["N_i"]
-        
+
         return other_rank
-    
+
     def create_cycle_neighbors(self, rank):
         """
         Returns a list of neighbors rightly ordered according to rank and the graph's topology.
         """
         raise NotImplementedError
-    
-    def set_edges(self,):
+
+    def set_edges(
+        self,
+    ):
         """
         returns a list of the undirected edges
         """
         edges = []
         for i in range(self.world_size):
             for j in self.nodes[i]["N_i"]:
-                if (i,j) or (j,i) not in edges:
-                    edges.append((i,j))
+                if (i, j) or (j, i) not in edges:
+                    edges.append((i, j))
         return edges
-        
+
 
 class CycleGraph(Graph):
     """
     In the cycle graph, if their rank is even,
     nodes will communicate first to the right and then to the left,
     the inverse if it is odd.
-    """  
+    """
+
     def create_cycle_neighbors(self, rank):
 
-        if rank%2 :
-            return [(rank + 1)%self.world_size, (rank - 1)%self.world_size]
+        if rank % 2:
+            return [(rank + 1) % self.world_size, (rank - 1) % self.world_size]
         else:
-            return [(rank - 1)%self.world_size, (rank + 1)%self.world_size]
-        
+            return [(rank - 1) % self.world_size, (rank + 1) % self.world_size]
+
 
 class ExponentialGraph(Graph):
     """
-    In the exponential graph, if our rank is even, 
+    In the exponential graph, if our rank is even,
     first we communicate with ranks that are in the 2^k below us, and then 2^k above us,
     if it is odd, the opposite.
     Assumes that world_size is a power of 2.
     """
-    
+
     def create_cycle_neighbors(self, rank):
         # compute the size of the neighborhood in an exponential graph.
         log_n = int(np.log2(self.world_size))
@@ -95,27 +100,27 @@ class ExponentialGraph(Graph):
         # cycles through the ranks both times,
         # once clockwise, and the other anti clockwise.
         for k in range(log_n):
-            if rank%2:
-                N_rank.append((rank + 2**k)%self.world_size)
+            if rank % 2:
+                N_rank.append((rank + 2**k) % self.world_size)
             else:
-                N_rank.append((rank - 2**k)%self.world_size)
+                N_rank.append((rank - 2**k) % self.world_size)
         for k in range(log_n):
-            if rank%2:
-                N_rank.append((rank - 2**k)%self.world_size)
+            if rank % 2:
+                N_rank.append((rank - 2**k) % self.world_size)
             else:
-                N_rank.append((rank + 2**k)%self.world_size)
+                N_rank.append((rank + 2**k) % self.world_size)
         return N_rank
-    
-    
+
+
 def compute_laplacian(G, rate_com):
     """
     Given a Graph and a communication rate,
-    returns the corresponding Laplacian matrix so that 
+    returns the corresponding Laplacian matrix so that
     the effective resistance and the algebraic connectivity can be computed.
     """
     n = G.world_size
     # init a 0 matrix for the symmetric stochastic weight matrix modeling the connectivity
-    W = np.zeros((n,n))
+    W = np.zeros((n, n))
     # for each node i
     for i in range(n):
         # visit all of its neighbors j
@@ -123,21 +128,21 @@ def compute_laplacian(G, rate_com):
         len_N_i = len(N_i)
         for j in N_i:
             # add the correponding weight to the weight matrix
-            W[i,j] += 1/len_N_i
+            W[i, j] += 1 / len_N_i
     # init the laplacian for a "unit" communication rate
     L = np.eye(n) - W
     # multiply it by the right constant
     L *= rate_com
-    
+
     return L
 
 
 def compute_graph_resistance(L, G):
     """
     Compute the graph's resistance using the Laplacian L.
-    The max effective resistance of the graph is defined as 
+    The max effective resistance of the graph is defined as
     $\max_{(i,j) \in E} \frac{1}{2} (e_i - e_j)^\top L^+ (e_i - e_j)
-    
+
     Parameters:
         - L (np.array): A Laplacian matrix of G.
         - G (nx.graph): A NetworkX graph.
@@ -164,26 +169,28 @@ def compute_graph_resistance(L, G):
 
 
 def compute_algebraic_connectivity(L):
-    
+
     # smallest strictly positive eigenvalue of L
     chi_1 = 1 / scipy.linalg.eigh(L)[0][1]
-    
+
     return chi_1
 
 
 def compute_acid_constants(graph_topology, world_size, rate_com):
-    
-    if graph_topology == 'cycle':
+
+    if graph_topology == "cycle":
         G = CycleGraph(world_size)
-    elif graph_topology == 'exponential':
+    elif graph_topology == "exponential":
         G = ExponentialGraph(world_size)
     else:
-        raise ValueError("ACiD momentum can only be applied on the supported graph topologies ['cycle', 'exponential']")
-    
+        raise ValueError(
+            "ACiD momentum can only be applied on the supported graph topologies ['cycle', 'exponential']"
+        )
+
     L = compute_laplacian(G, rate_com)
     chi_1 = compute_algebraic_connectivity(L)
     chi_2 = compute_graph_resistance(L, G)
-    eta = 0.5/np.sqrt(chi_1 * chi_2)
-    beta_tilde = 0.5*np.sqrt(chi_1 / chi_2)
-    
+    eta = 0.5 / np.sqrt(chi_1 * chi_2)
+    beta_tilde = 0.5 * np.sqrt(chi_1 / chi_2)
+
     return eta, beta_tilde

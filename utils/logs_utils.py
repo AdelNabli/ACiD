@@ -151,10 +151,20 @@ def save_com_logs(com_history, path_logs, id_run, rank):
         pass
     path_com_logs = path_folder + str(id_run) + ".txt"
     with open(path_com_logs, "a+") as file:
-        file.write(str(rank) + ' : ' + str(com_history) + "\n")
-        
-        
-def print_training_evolution(log, nb_grad_local, nb_com_local, n_batch_per_epoch, rank, t_beg, t_last_epoch, loss, epoch):
+        file.write(str(rank) + " : " + str(com_history) + "\n")
+
+
+def print_training_evolution(
+    log,
+    nb_grad_local,
+    nb_com_local,
+    n_batch_per_epoch,
+    rank,
+    t_beg,
+    t_last_epoch,
+    loss,
+    epoch,
+):
     if nb_grad_local % n_batch_per_epoch == 0:
         epoch += 1
         delta_t = time.time() - t_beg
@@ -173,6 +183,7 @@ def print_training_evolution(log, nb_grad_local, nb_com_local, n_batch_per_epoch
         t_last_epoch = time.time()
     return epoch, t_last_epoch
 
+
 def log_to_tensorboard(writer, nb_grad_local, rank, loss, t0, delta_step_for_log):
     if nb_grad_local % delta_step_for_log == 0:
         with torch.no_grad():
@@ -188,7 +199,10 @@ def log_to_tensorboard(writer, nb_grad_local, rank, loss, t0, delta_step_for_log
                 nb_grad_local,
             )
 
-def make_checkpoint(rank, model, optimizer, nb_grad_limit, make_checkpoint, path_logs, id_run):
+
+def make_checkpoint(
+    rank, model, optimizer, nb_grad_limit, make_checkpoint, path_logs, id_run
+):
     # save 5 steps before the end to make sure it is saved without a mp bug
     if nb_grads_count == nb_grad_limit - 5 and make_checkpoint:
         # if it does not already exists, creates the folder
