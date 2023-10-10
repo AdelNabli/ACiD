@@ -31,9 +31,9 @@ For the ```cycle``` and ```exponential``` graph topology, it is possible to set 
 
 ### Large Batch training setting
 
-We do not divide our batch-size by the number of workers to obtain a linear speedup of the training time with respect to the number of workers. Thus, we implement the learning rate scheduler of [Goyal et al. 2017](https://arxiv.org/abs/1706.02677) (set ```--use_linear_scaling```), and do not apply apply weight-decay to the biases and batch norm learnable parameters (set ```--filter_bias_and_bn ```). Our training finishes when the **sum of all samples seen by all workers** corresponds to the number set with the ```--n_epoch_if_1_worker``` argument. GPUs not computing gradient at the same speed, this inevitably means that the fastest workers will perform more gradient steps than the slowest ones, reducing training time. We perform a global average of our models before, and after our training.
+To obtain a linear speedup of the training time with respect to the number of workers, we do **not** divide our batch-size by the number of workers. Thus, we implement the learning rate scheduler of [Goyal et al. 2017](https://arxiv.org/abs/1706.02677) by scaling it proportionally to the number of workers (set ```--use_linear_scaling```), and do not apply apply weight-decay to the biases and batch norm learnable parameters (set ```--filter_bias_and_bn ```). Our training finishes when the **sum of all samples seen by all workers** corresponds to the number set with the ```--n_epoch_if_1_worker``` argument. GPUs not computing gradient at the same speed, this inevitably means that the fastest workers will perform more gradient steps than the slowest ones, reducing training time. We perform a global average of our models before, and after our training.
 
-An example script to launch a SLURM job for training ResNet18 on CIFAR10 using 16 GPUs is provided in [adp.slurm](https://github.com/AdelNabli/ACiD/blob/main/adp.slurm). You might want to install the [hostlist]( https://pypi.org/project/hostlist/) package first in that case.
+An example script to launch a SLURM job for training ResNet18 on CIFAR10 using 32 GPUs is provided in [adp.slurm](https://github.com/AdelNabli/ACiD/blob/main/adp.slurm). You might want to install the [hostlist]( https://pypi.org/project/hostlist/) package first in that case.
 
 ### WARNINGS
 
