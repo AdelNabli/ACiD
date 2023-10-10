@@ -4,6 +4,7 @@ import numpy as np
 import torch.nn as nn
 import multiprocessing as mp
 from p2p_averaging import gossip_process
+from graph_utils import compute_acid_constants
 from p2p_sync import sync_process, master_process
 from acid_utils import init_momentum_var, load_momentum, acid_ode
 
@@ -12,7 +13,7 @@ class ADP(nn.Module):
     """
     A wrapper around the model, with added functions to handle asynchronous communications.
     """
-    def __init__(self, model, rank, local_rank, world_size, nb_grad_tot_goal, log, rate_com, apply_acid, acid_params, criterion, optimizer, data_iterator, momentum, dataset_name, graph_topology, deterministic_com, deterministic_neighbor):
+    def __init__(self, model, rank, local_rank, world_size, nb_grad_tot_goal, log, rate_com, apply_acid, criterion, optimizer, data_iterator, momentum, dataset_name, graph_topology, deterministic_com, deterministic_neighbor):
         super().__init__()
         
         # Check for argument consistency.
@@ -58,7 +59,7 @@ class ADP(nn.Module):
         
         # init acid variables
         self.apply_acid = apply_acid
-        self.init_acid(acid_params, criterion, optimizer, data_iterator, momentum, dataset_name)
+        self.init_acid(criterion, optimizer, data_iterator, momentum, dataset_name)
         
         # launch the communication processes
         self.launch_sync_process()
@@ -69,13 +70,13 @@ class ADP(nn.Module):
         # wait that all parameters have been initialized with an all-reduce in the gossip process
         self.barrier_end_init.wait()
         
-    def init_acid(self, acid_params, criterion, optimizer, data_iterator, momentum, dataset_name):
+    def init_acid(self, criterion, optimizer, data_iterator, momentum, dataset_name):
         # if we apply acid, initialize the specific variables
         if self.apply_acid:
             # initialize a momentum variable
             self.params_com_tilde = self.params_com.detach().clone().share_memory_()
-            # retrieve the params of the acid momentum
-            (eta, self.beta_tilde) = acid_params
+            # compute ACiD momentum constants
+            (eta, self.beta_tilde) = compute_acid_constants(self.graph_topology, self.world_size, self.rate_com)
             # init the ode mixing matrix
             self.ode_matrix = torch.zeros((2, 2)).double()
             self.ode_matrix[0, 0] = -eta

@@ -54,8 +54,6 @@ def listen_given_rank(rank, world_size, queue, nb_tot_grad_so_far, lock, log):
 
     
 def master_process(world_size, nb_grad_tot_goal, log, graph_topology, deterministic_neighbor):
-    # initialize a mp Manager
-    #with Manager() as manager:
     queue = mp.Queue()
     lock = mp.Lock()
     nb_tot_grad_so_far = mp.Value('i', 0)

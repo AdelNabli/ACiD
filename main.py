@@ -80,13 +80,6 @@ def get_args_parser():
         help="Whether or not to pair neighbors for p2p com deterministicaly (thus waiting for it if not available) or look for an available one randomly.",
     )
     parser.add_argument(
-        "--acid_params",
-        default=(0.035, 7.26),
-        type=float,
-        nargs='+',
-        help="The values of (eta, beta_tilde) in the ACiD algorithm.",
-    )
-    parser.add_argument(
         "--batch_size",
         default=256,
         type=int,
@@ -201,7 +194,7 @@ def run(rank, local_rank, world_size, n_nodes, master_addr, master_port, args):
         args.dataset_name,
     )
     # Initialize the worker
-    adp_model = ADP(model, rank, local_rank, world_size, nb_grad_tot, log, args.rate_com, args.apply_acid, args.acid_params, criterion, optimizer, data_iterator, args.momentum, args.dataset_name, args.graph_topology, args.deterministic_coms, args.deterministic_neighbor)
+    adp_model = ADP(model, rank, local_rank, world_size, nb_grad_tot, log, args.rate_com, args.apply_acid, criterion, optimizer, data_iterator, args.momentum, args.dataset_name, args.graph_topology, args.deterministic_coms, args.deterministic_neighbor)
     path_tensorboard = args.path_logs + '/tensorboard/' + id_run.decode()
     writer = SummaryWriter(path_tensorboard)
     

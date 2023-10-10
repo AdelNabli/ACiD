@@ -12,7 +12,7 @@ class Graph(object):
     with pre-designed communication schedule.
     """
     
-    def __init__(self, world_size, deterministic_neighbor):
+    def __init__(self, world_size, deterministic_neighbor=False):
         self.world_size = world_size
         self.deterministic_neighbor = deterministic_neighbor
         # create a dictionnary to store all the nodes attributes
@@ -171,8 +171,16 @@ def compute_algebraic_connectivity(L):
     return chi_1
 
 
-def compute_acid_constants(L, G):
+def compute_acid_constants(graph_topology, world_size, rate_com):
     
+    if graph_topology == 'cycle':
+        G = CycleGraph(world_size)
+    elif graph_topology == 'exponential':
+        G = ExponentialGraph(world_size)
+    else:
+        raise ValueError("ACiD momentum can only be applied on the supported graph topologies ['cycle', 'exponential']")
+    
+    L = compute_laplacian(G, rate_com)
     chi_1 = compute_algebraic_connectivity(L)
     chi_2 = compute_graph_resistance(L, G)
     eta = 0.5/np.sqrt(chi_1 * chi_2)
