@@ -12,7 +12,7 @@ class ADP(nn.Module):
     """
     A wrapper around the model, with added functions to handle asynchronous communications.
     """
-    def __init__(self, model, rank, local_rank, world_size, nb_grad_tot_goal, log, rate_com, apply_acid, acid_params, criterion, optimizer, data_iterator, momentum, dataset_name, graph_topology, deterministic_com):
+    def __init__(self, model, rank, local_rank, world_size, nb_grad_tot_goal, log, rate_com, apply_acid, acid_params, criterion, optimizer, data_iterator, momentum, dataset_name, graph_topology, deterministic_com, deterministic_neighbor):
         super().__init__()
         
         # Check for argument consistency.
@@ -30,6 +30,7 @@ class ADP(nn.Module):
         self.rate_com = rate_com
         self.graph_topology = graph_topology
         self.deterministic_com = deterministic_com
+        self.deterministic_neighbor = deterministic_neighbor
         # loads the model parameters in share memory so that both grad and com processes edit the same tensor
         params = self.get_weights()
         params = params.to(self.local_rank)
@@ -211,6 +212,7 @@ class ADP(nn.Module):
             self.nb_grad_tot_goal,
             self.log,
             self.graph_topology,
+            self.deterministic_neighbor,
             ),
         )
         master_sync_process.daemon = False # to enable nested processes

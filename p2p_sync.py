@@ -53,7 +53,7 @@ def listen_given_rank(rank, world_size, queue, nb_tot_grad_so_far, lock, log):
         lock.release()
 
     
-def master_process(world_size, nb_grad_tot_goal, log, graph_topology):
+def master_process(world_size, nb_grad_tot_goal, log, graph_topology, deterministic_neighbor):
     # initialize a mp Manager
     #with Manager() as manager:
     queue = mp.Queue()
@@ -75,9 +75,9 @@ def master_process(world_size, nb_grad_tot_goal, log, graph_topology):
     if graph_topology != "complete":
         # init a graph object
         if graph_topology == "cycle":
-            G = CycleGraph(world_size)
+            G = CycleGraph(world_size, deterministic_neighbor)
         elif graph_topology == "exponential":
-            G = ExponentialGraph(world_size)
+            G = ExponentialGraph(world_size, deterministic_neighbor)
     # while the total number of grad is not reached
     while nb_tot_grad_so_far.value < nb_grad_tot_goal:
         if graph_topology == "complete":
@@ -98,14 +98,17 @@ def master_process(world_size, nb_grad_tot_goal, log, graph_topology):
             i = queue.get()
             # init a neighbor var
             j_ready = None
-            # gather the next rank i is supposed to communicate to
-            j = G.next_communication(i)
-            # if j is ready to com
-            if G.nodes[j]["is_ready_2_com"]:
-                # put the bool back to False
-                G.nodes[j]["is_ready_2_com"] = False
-                j_ready = j
-                break
+            # gather the next ranks i is supposed to communicate with
+            # if deterministic_neighbor, then the list contains only 1 item.
+            # else, will go through all the neighbors in a random order.
+            N_i = G.next_communication(i)
+            for j in N_i:
+                # if j is ready to com
+                if G.nodes[j]["is_ready_2_com"]:
+                    # put the bool back to False
+                    G.nodes[j]["is_ready_2_com"] = False
+                    j_ready = j
+                    break
             # if the neighbor of i for next step is not ready
             if j_ready is None:
                 # we signal that i is ready in the graph

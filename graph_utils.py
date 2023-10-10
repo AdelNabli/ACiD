@@ -1,4 +1,5 @@
 import scipy
+import random
 import numpy as np
 
 
@@ -11,8 +12,9 @@ class Graph(object):
     with pre-designed communication schedule.
     """
     
-    def __init__(self, world_size):
+    def __init__(self, world_size, deterministic_neighbor):
         self.world_size = world_size
+        self.deterministic_neighbor = deterministic_neighbor
         # create a dictionnary to store all the nodes attributes
         self.nodes = dict()
         for i in range(world_size):
@@ -34,10 +36,14 @@ class Graph(object):
         returns the rank of the neighbor we are supposed to communicate with,
         and prepare the next communication.
         """
-        # cycles through the list of the neighbors. Thus, suppose that the list is in the "right" order
-        # to avoid deadlocks, highlighting the importance of the "create_cycle_neighbors" method.
-        other_rank = self.nodes[rank]["N_i"][self.nodes[rank]["count_iter"] % self.len_cycle]
-        self.nodes[rank]["count_iter"] += 1
+        if self.deterministic_neighbor:
+            # cycles through the list of the neighbors. Thus, suppose that the list is in the "right" order
+            # to avoid deadlocks, highlighting the importance of the "create_cycle_neighbors" method.
+            other_rank = [self.nodes[rank]["N_i"][self.nodes[rank]["count_iter"] % self.len_cycle]]
+            self.nodes[rank]["count_iter"] += 1
+        else:
+            random.shuffle(self.nodes[rank]["N_i"])
+            other_rank = self.nodes[rank]["N_i"]
         
         return other_rank
     
@@ -165,7 +171,7 @@ def compute_algebraic_connectivity(L):
     return chi_1
 
 
-def compute_acid_constant(L, G):
+def compute_acid_constants(L, G):
     
     chi_1 = compute_algebraic_connectivity(L)
     chi_2 = compute_graph_resistance(L, G)
