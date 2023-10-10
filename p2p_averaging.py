@@ -2,7 +2,7 @@ import time
 import torch
 import numpy as np
 import torch.distributed as dist
-from acid_utils import acid_ode
+from utils.acid_utils import acid_ode
 
 
 def do_send(

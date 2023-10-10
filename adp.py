@@ -4,9 +4,9 @@ import numpy as np
 import torch.nn as nn
 import multiprocessing as mp
 from p2p_averaging import gossip_process
-from graph_utils import compute_acid_constants
 from p2p_sync import sync_process, master_process
-from acid_utils import init_momentum_var, load_momentum, acid_ode
+from utils.graph_utils import compute_acid_constants
+from utils.acid_utils import init_momentum_var, load_momentum, acid_ode
 
 
 class ADP(nn.Module):

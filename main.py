@@ -10,10 +10,10 @@ import multiprocessing as mp
 import torch.nn.functional as F
 import torch.distributed as dist
 from adp import ADP
-from data import data_loader, evaluate
+from utils.data_utils import data_loader, evaluate
 from torch.utils.tensorboard import SummaryWriter
-from net_utils import create_model, load_optimizer
-from logs_utils import create_dict_result, save_result, create_id_run, save_com_logs, print_training_evolution, log_to_tensorboard
+from utils.net_utils import create_model, load_optimizer
+from utils.logs_utils import create_dict_result, save_result, create_id_run, save_com_logs, print_training_evolution, log_to_tensorboard
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -27,7 +27,7 @@ def get_args_parser():
         "--optimizer_name",
         default="SGD",
         type=str,
-        help="Name of the optimizer to use. We support either one of ['SGD','LARS'].",
+        help="Name of the optimizer to use. We only support 'SGD' at the moment.",
     )
     parser.add_argument(
         "--dataset_name",
@@ -156,6 +156,10 @@ def run(rank, local_rank, world_size, n_nodes, master_addr, master_port, args):
         # create a unique id_run
         id_run = create_id_run()
         filestore.set("id_run", str(id_run))
+        # if a tensorboard dir doesn't exist, makes it
+        tensorboard_dir = args.path_logs + '/tensorboard/'
+        if not os.path.exists(tensorboard_dir):
+            os.mkdir(tensorboard_dir)
     else:
         # initialize the client stores for the run id
         filestore = dist.TCPStore(TCP_IP, port=TCP_port, is_master=False)
@@ -195,7 +199,7 @@ def run(rank, local_rank, world_size, n_nodes, master_addr, master_port, args):
     )
     # Initialize the worker
     adp_model = ADP(model, rank, local_rank, world_size, nb_grad_tot, log, args.rate_com, args.apply_acid, criterion, optimizer, data_iterator, args.momentum, args.dataset_name, args.graph_topology, args.deterministic_coms, args.deterministic_neighbor)
-    path_tensorboard = args.path_logs + '/tensorboard/' + id_run.decode()
+    path_tensorboard = tensorboard_dir + id_run.decode()
     writer = SummaryWriter(path_tensorboard)
     
     #### COMMUNICATIONS & GRAD STEPS ####
@@ -235,7 +239,7 @@ def run(rank, local_rank, world_size, n_nodes, master_addr, master_port, args):
         # print info every epoch
         count_grads += 1
         epoch, t_last_epoch = print_training_evolution(log, count_grads, adp_model.count_coms_local.value, n_batch_per_epoch, rank, t_begin, t_last_epoch, loss, epoch)
-        log_to_tensorboard(writer, count_grads, rank, loss, t0) #outputs, labels, adp_model, optimizer, log)
+        log_to_tensorboard(writer, count_grads, rank, loss, t0, delta_step_for_log=5)
 
     t_end = time.time()
     

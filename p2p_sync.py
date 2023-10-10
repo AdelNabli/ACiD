@@ -5,7 +5,7 @@ import numpy as np
 import torch.distributed as dist
 import multiprocessing as mp
 from multiprocessing import Process, Manager
-from graph_utils import ExponentialGraph, CycleGraph
+from utils.graph_utils import ExponentialGraph, CycleGraph
 
 def sync_process(rank, world_size, rank_other, new_grads, barrier_sync_averaging, log):
     # initialize the process group for rank communications
