@@ -12,8 +12,8 @@ We implement an **Asynchronous Data Parallel** (ADP) model wrapper for distribut
 
 ### Asynchronous Data Parallel
 
-Our ADP wrapper (see [adp.py](https://github.com/AdelNabli/ACiD/blob/main/adp.py)) allows each Neural Network to be hosted on a different GPU, and perform gradient steps at its own pace in the main thread.
-In a seperated thread, peer-to-peer model averaging are performed, requiring to synchronize only 2 models at at time. This is done *in the background, in parallel* of the gradient computations, in opposition to ```All-Reduce``` based methods such as DPP synchronizing everybody and performing communications *after* gradient computations.
+Our ADP wrapper (see [adp.py](https://github.com/AdelNabli/ACiD/blob/main/adp.py)) allows each Neural Network to be hosted on a different GPU, and to perform gradient steps at its own pace in the main thread.
+In a seperated thread, peer-to-peer model averagings are performed, requiring to synchronize only 2 models at at time. This is done *in the background, in parallel* of the gradient computations, in opposition to ```All-Reduce``` based methods such as DPP synchronizing all workers and performing communications *after* gradient computations.
 The code for training the Neural Network is thus very similar to standard DDP (see [main.py](https://github.com/AdelNabli/ACiD/blob/main/main.py ) ).
 
 ### p2p asynchronous communications
@@ -26,14 +26,15 @@ Our code handles at the time 3 graphs topologies:
 For the ```cycle``` and ```exponential``` graph topology, it is possible to set to ```True``` the ```--deterministic_neighbor``` argument. In that case, p2p communications will happen in a predetermined order by cycling through the edges *(e.g., for the cycle graph, we will force every other edge to "spike" and then the complementary ones).* If ```False```, when a worker is available for its next communication, it will communicate with the first of its neighbors it sees available, reducing idle time.
 
 * ```--rate_com``` governs how many p2p averaging happen for each worker between 2 gradient computations.
-* if ```--deterministic_coms``` is set to ```False```, then a Poisson Point Process is implemented, and ```--rate_com``` p2p communication happen between 2 gradients only **in expectation**.
+* If ```--deterministic_coms``` is set to ```False```, then a Poisson Point Process is implemented, and ```--rate_com``` p2p communication happen between 2 gradients only **in expectation**.
+* If ```--deterministic_coms``` is set to ```False```, then our code handles non integer values of ```--rate_com```. In particular, a value < 1 could be set to perform a stochastic version of [local SGD]( https://arxiv.org/abs/1805.09767 ).
 
 An example script for training ResNet18 on CIFAR10 using 16 GPUs is provided in [adp.slurm](https://github.com/AdelNabli/ACiD/blob/main/adp.slurm). You might want to install the [hostlist]( https://pypi.org/project/hostlist/) package first in that case.
 
 ### WARNINGS
 
-* for theoretical reasons, ```--apply_acid``` can only be set to ```True``` for non-complete graph topologies. ACiD hyper-parameters are automatically computed from the Graph's Laplacian using their theoretical values.
-* for implementation reasons, our code currently handles ```--apply_acid``` only if SGD with momentum is used (i.e., ```--momentum``` argument different than 0).
+* For theoretical reasons, ```--apply_acid``` can only be set to ```True``` for non-complete graph topologies. ACiD hyper-parameters are automatically computed from the Graph's Laplacian using their theoretical values.
+* For implementation reasons, our code currently handles ```--apply_acid``` only if SGD with momentum is used (i.e., a ```--momentum``` argument different than 0).
 
 ## Citation
 ```bibtex
