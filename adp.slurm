@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=distributed     # job name
 #SBATCH -C a100                     # GPU A100 80 Go
-##SBATCH -–qos=qos_gpu-t4            # for jobs lasting more than 20h, only works on v100
 #SBATCH --nodes=4                    # number of nodes
 #SBATCH --ntasks-per-node=8          # = number of GPUs per node
 #SBATCH --gres=gpu:8                 # number of GPUs per node

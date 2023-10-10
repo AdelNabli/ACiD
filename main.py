@@ -157,6 +157,7 @@ def run(rank, local_rank, world_size, n_nodes, master_addr, master_port, args):
     TCP_IP = master_addr
     TCP_port = master_port + 3
     tensorboard_dir = args.path_logs + "/tensorboard/"
+    slurm_logs_dir = args.path_logs + "/logs/"
     if rank == 0:
         # initialize the server store for the run id
         filestore = dist.TCPStore(TCP_IP, port=TCP_port, is_master=True)
@@ -166,6 +167,8 @@ def run(rank, local_rank, world_size, n_nodes, master_addr, master_port, args):
         # if a tensorboard dir doesn't exist, makes it
         if not os.path.exists(tensorboard_dir):
             os.mkdir(tensorboard_dir)
+        if not os.path.exists(slurm_logs_dir):
+            os.mkdir(slurm_logs_dir)
     else:
         # initialize the client stores for the run id
         filestore = dist.TCPStore(TCP_IP, port=TCP_port, is_master=False)
