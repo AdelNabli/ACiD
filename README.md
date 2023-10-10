@@ -13,7 +13,7 @@ We implement an **Asynchronous Data Parallel** (ADP) model wrapper for distribut
 ### Asynchronous Data Parallel
 
 Our ADP wrapper (see [adp.py](https://github.com/AdelNabli/ACiD/blob/main/adp.py)) allows each Neural Network to be hosted on a different GPU, and to perform gradient steps at its own pace in the main thread.
-In a seperated thread, peer-to-peer model averagings are performed, requiring to synchronize only 2 models at at time. This is done *in the background, in parallel* of the gradient computations, in opposition to ```All-Reduce``` based methods such as DPP synchronizing all workers and performing communications *after* gradient computations.
+In a seperated thread, peer-to-peer model averagings are performed, requiring to synchronize only 2 models at a time. This is done *in the background, in parallel* of the gradient computations, in opposition to ```All-Reduce``` based methods such as DDP synchronizing all workers and performing communications *after* gradient computations.
 The code for training the Neural Network is thus very similar to standard DDP (see [main.py](https://github.com/AdelNabli/ACiD/blob/main/main.py ) ).
 
 ### p2p asynchronous communications
