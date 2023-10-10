@@ -1,6 +1,6 @@
 # ACiD
 
-Implementation of NeurIPS 2023 paper [ACiD: Accelerating Asynchronous Communication in Decentralized Deep Learning](https://arxiv.org/pdf/2306.08289.pdf). \
+Implementation of NeurIPS 2023 paper [ACiD: Accelerating Asynchronous Communication in Decentralized Deep Learning](https://arxiv.org/pdf/2306.08289.pdf).
 
 ## Requirements
 * [pytorch](https://pytorch.org/)
@@ -22,12 +22,18 @@ Our code handles at the time 3 graphs topologies:
 * ```--graph_topology complete```: all edges of the complete graph are considered between all the workers. A separate routine running in the background of worker 0 pairs the first 2 available workers for communications to minimize workers idle time.
 * ```--graph_topology exponential```: implement the exponential graph of [SGP](https://arxiv.org/pdf/1811.10792.pdf ) and [AD-PSGD](https://arxiv.org/pdf/1710.06952.pdf) papers. 
 * ```--graph_topology cyle```: test a poorly connected graph topology.
-**WARNING:** for theoretical reasons, ```--apply_acid``` can only be set to ```True``` for non-complete graph topologies. ACiD hyper-parameters are automatically computed from the Graph's Laplacian using their theoretical values.
 
 For the ```cycle``` and ```exponential``` graph topology, it is possible to set to ```True``` the ```--deterministic_neighbor``` argument. In that case, p2p communications will happen in a predetermined order by cycling through the edges *(e.g., for the cycle graph, we will force every other edge to "spike" and then the complementary ones).* If ```False```, when a worker is available for its next communication, it will communicate with the first of its neighbors it sees available, reducing idle time.
 
 * ```--rate_com``` governs how many p2p averaging happen for each worker between 2 gradient computations.
 * if ```--deterministic_coms``` is set to ```False```, then a Poisson Point Process is implemented, and ```--rate_com``` p2p communication happen between 2 gradients only **in expectation**.
+
+An example script for training ResNet18 on CIFAR10 using 16 GPUs is provided in [adp.slurm](https://github.com/AdelNabli/ACiD/blob/main/adp.slurm). You might want to install the [hostlist]( https://pypi.org/project/hostlist/) package first in that case.
+
+### WARNINGS
+
+* for theoretical reasons, ```--apply_acid``` can only be set to ```True``` for non-complete graph topologies. ACiD hyper-parameters are automatically computed from the Graph's Laplacian using their theoretical values.
+* for implementation reasons, our code currently handles ```--apply_acid``` only if SGD with momentum is used (i.e., ```--momentum``` argument different than 0).
 
 ## Citation
 ```bibtex
