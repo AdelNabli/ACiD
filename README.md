@@ -18,7 +18,7 @@ The code for training the Neural Network is thus very similar to standard DDP (s
 
 ### p2p asynchronous communications
 
-Our code handles at the time 3 graphs topologies:
+Our code handles 3 graphs topologies at this time:
 * ```--graph_topology complete```: all edges of the complete graph are considered between all the workers. A separate routine running in the background of worker 0 pairs the first 2 available workers for communications to minimize workers idle time.
 * ```--graph_topology exponential```: implement the exponential graph of [SGP](https://arxiv.org/pdf/1811.10792.pdf ) and [AD-PSGD](https://arxiv.org/pdf/1710.06952.pdf) papers. 
 * ```--graph_topology cycle```: test a poorly connected graph topology.
