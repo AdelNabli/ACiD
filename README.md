@@ -44,7 +44,7 @@ An example script to launch a SLURM job for training ResNet18 on CIFAR10 using 3
 
 * Change the conda environment path in [adp.slurm](https://github.com/AdelNabli/ACiD/blob/main/adp.slurm), and add the ```#SBATCH -A xxx@a100``` line to link to your A100 account.
 * Change the path to CIFAR10 dataset in the ```data_loader``` function of [data_utils.py]( https://github.com/AdelNabli/ACiD/blob/main/utils/data_utils.py ).
-* Change the default ```path_logs``` argument in [main.py](https://github.com/AdelNabli/ACiD/blob/main/main.py ) to the root directory of this repo.
+* Change the default ```path_logs``` argument in [main.py](https://github.com/AdelNabli/ACiD/blob/main/main.py ) to the root path of this repo.
 
 ## Citation
 ```bibtex
