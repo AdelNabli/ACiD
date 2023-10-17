@@ -142,7 +142,7 @@ def get_args_parser():
     )
     parser.add_argument(
         "--path_logs",
-        default=os.environ["WORK"] + "/Async_deep/acid_v2",
+        default=os.getcwd(),
         type=str,
         help="Path to the root directory for the logs and results folders.",
     )
@@ -156,6 +156,7 @@ def run(rank, local_rank, world_size, n_nodes, master_addr, master_port, args):
     # Initialize a TCP store for the global run id
     TCP_IP = master_addr
     TCP_port = master_port + 3
+    # init  path dir for the logs
     tensorboard_dir = args.path_logs + "/tensorboard/"
     slurm_logs_dir = args.path_logs + "/logs/"
     if rank == 0:
@@ -167,6 +168,7 @@ def run(rank, local_rank, world_size, n_nodes, master_addr, master_port, args):
         # if a tensorboard dir doesn't exist, makes it
         if not os.path.exists(tensorboard_dir):
             os.mkdir(tensorboard_dir)
+        # if the dir for the slurm logs doesn't exist, makes it
         if not os.path.exists(slurm_logs_dir):
             os.mkdir(slurm_logs_dir)
     else:
@@ -314,7 +316,7 @@ def run(rank, local_rank, world_size, n_nodes, master_addr, master_port, args):
             adp_model,
             test_loader,
             criterion,
-            rank=0,
+            local_rank=0,
             print_message=True,
             dataset_name=args.dataset_name,
         )

@@ -40,11 +40,10 @@ An example script to launch a SLURM job for training ResNet18 on CIFAR10 using 3
 * For theoretical reasons, ```--apply_acid``` can only be set to ```True``` for non-complete graph topologies. ACiD hyper-parameters are automatically computed from the Graph's Laplacian using their theoretical values.
 * For implementation reasons, our code currently handles ```--apply_acid``` only if SGD with momentum is used (i.e., a ```--momentum``` argument different than 0).
 
-## (TODO): parts to edit to run on Jean-Zay as it is
+## Run this code on Jean-Zay
 
 * Change the conda environment path in [adp.slurm](https://github.com/AdelNabli/ACiD/blob/main/adp.slurm), and add the ```#SBATCH -A xxx@a100``` line to link to your A100 account.
 * Change the path to CIFAR10 dataset in the ```data_loader``` function of [data_utils.py]( https://github.com/AdelNabli/ACiD/blob/main/utils/data_utils.py ).
-* Change the default ```path_logs``` argument in [main.py](https://github.com/AdelNabli/ACiD/blob/main/main.py ) to the root path of this repo.
 
 ## Citation
 ```bibtex

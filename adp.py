@@ -11,7 +11,7 @@ from utils.acid_utils import init_momentum_var, load_momentum, acid_ode
 
 class ADP(nn.Module):
     """
-    A wrapper around the model, with added functions to handle asynchronous communications.
+    A wrapper around the model, with added functions to perform asynchronous p2p communications in the background.
     """
 
     def __init__(
@@ -216,7 +216,6 @@ class ADP(nn.Module):
                 self.barrier_com_grad,
                 self.log,
                 self.com_history,
-                self.count_grads_local,
                 self.count_coms_local,
                 self.rate_com,
                 self.apply_acid,

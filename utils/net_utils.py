@@ -179,13 +179,13 @@ def load_optimizer(
     as well as a lr scheduler.
 
     Parameters:
-        - model (Net): the model to which we apply the optimizer.
+        - model (nn.Module): the model to which we apply the optimizer.
         - lr (float): the learning rate.
         - momentum (float): the momentum value.
         - weight_decay (float): the weight decay value.
         - gamma (float): the gamma parameter of the StepLR scheduler.
         - optimizer_name (str): the name of the optimizer to load.
-                            either one of ['SGD']
+                                either one of ['SGD']
         - world_size (int): the number of workers.
         - use_linear_scaling (bool): whether or not to use the LR schedule for large batch sizes.
         - n_step_tot (int): the total number of iterations.

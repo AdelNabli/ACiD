@@ -2,6 +2,7 @@ import os
 import torch
 import torchvision
 import torch.nn.functional as F
+
 # from fedlab.utils.dataset.partition import CIFAR10Partitioner
 
 
@@ -173,7 +174,12 @@ def test_data(path_data, dataset_name="CIFAR10"):
 
 
 def evaluate(
-    model, test_loader, criterion, rank=0, print_message=True, dataset_name="CIFAR10"
+    model,
+    test_loader,
+    criterion,
+    local_rank=0,
+    print_message=True,
+    dataset_name="CIFAR10",
 ):
     """
     Evaluate the model on the test data, and returns its accuracy.
@@ -181,7 +187,8 @@ def evaluate(
     Parameters:
         - model (nn.Module): model to evaluate (loaded on a GPU device)
         - test_loader (torch.utils.DataLoader): the test dataloader.
-        - rank (int): the id of the GPU device the model is loaded on.
+        - criterion (nn.Module): the criterion used to optimize model.
+        - local_rank (int): the id of the GPU device the model is loaded on.
         - print_message (bool): whether or not to print the statistics.
         - dataset_name (str): whether or not = 'CIFAR10', to apply logsoftmax after the model outputs.
 
@@ -199,7 +206,7 @@ def evaluate(
         # loop over the test set
         for data, target in test_loader:
             # load data to device
-            data, target = data.to(rank), target.to(rank)
+            data, target = data.to(local_rank), target.to(local_rank)
             output = model(data)
             if dataset_name == "CIFAR10":
                 output = F.log_softmax(output, dim=1)
