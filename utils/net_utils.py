@@ -135,7 +135,7 @@ def add_weight_decay(model, weight_decay, skip_list=()):
     Credit to Ross Wightman https://discuss.pytorch.org/t/weight-decay-in-the-optimizers-is-a-bad-idea-especially-with-batchnorm/16994/3
 
     Parameters:
-        - model (Net): the neural net to use.
+        - model (nn.Module): the neural net to use.
         - weight_decay (float): value of the weight decay.
         - skip_list (list): the list of parameters names to add to the skip_list.
 

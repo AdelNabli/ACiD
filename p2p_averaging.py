@@ -171,10 +171,8 @@ def gossip_process(
         - t_last_spike (float): time of the last local update to params_com (be it a communication or gradient one).
         - delta_t_grad (mp.Value storing a double): the variable keeping track of the time that it takes to make a grad step.
         - beta_tilde (float): the \alpha_tilde value to use in ACiD.
-        - deterministic_neighbor (bool): whether or not to schedule the p2p communications.
-                                         if True, if at the next step, worker i is supposed to communicate with j,
-                                         i will wait for j to be available to communicate.
-                                         if False, i will communicate faster, by just picking one of its available neighbor.
+        - deterministic_com (bool): whether or not to schedule to use Poisson Point Processes for the communications.
+                                    if True, a random number of p2p communications between 2 grad steps are done, following a poisson law.
 
     """
     # initialize the process group for communications
