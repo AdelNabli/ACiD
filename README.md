@@ -25,9 +25,8 @@ Our code handles 3 graphs topologies at this time:
 
 For the ```cycle``` and ```exponential``` graph topology, it is possible to set to ```True``` the ```--deterministic_neighbor``` argument. In that case, p2p communications will happen in a predetermined order by cycling through the edges *(e.g., for the cycle graph, we will force every other edge to "spike" and then the complementary ones).* If ```False```, when a worker is available for its next communication, it will communicate with the first of its neighbors it sees available, reducing idle time.
 
-* ```--rate_com``` governs how many p2p averaging happen for each worker between 2 gradient computations.
+* ```--rate_com``` governs how many p2p averaging happen for each worker between 2 gradient computations. In particular, a value < 1 could be set to perform (a stochastic version of) [local SGD]( https://arxiv.org/abs/1805.09767 ).
 * If ```--deterministic_coms``` is set to ```False```, then a Poisson Point Process is implemented, and ```--rate_com``` p2p communication happen between 2 gradients only **in expectation**.
-* If ```--deterministic_coms``` is set to ```False```, then our code handles non integer values of ```--rate_com```. In particular, a value < 1 could be set to perform a stochastic version of [local SGD]( https://arxiv.org/abs/1805.09767 ).
 
 ### Large Batch training setting
 

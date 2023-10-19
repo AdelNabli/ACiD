@@ -239,7 +239,10 @@ class ADP(nn.Module):
 
         scheduler.step()
         # wait or synchronize with the com process
+        # on this part, we take care of the case rate_com < 1
+        # the case where rate_com >= 1 is taken care of in the p2p_averaging process.
         if self.rate_com < 1:
+            # if we performed enough grad step between 2 communications.
             if self.count_grads_local.value >= self.count_grads_next_wait:
                 # Wait for 1 averaging step before grad
                 try:
@@ -247,9 +250,15 @@ class ADP(nn.Module):
                     self.barrier_com_grad.reset()
                 except:
                     pass
-                self.count_grads_next_wait += np.random.poisson(
-                    lam=1 / self.rate_com, size=None
-                )
+                # update the number of grad step to take before the next communication.
+                # if we use a deterministic number
+                if self.deterministic_com:
+                    self.count_grads_next_wait += 1 / self.rate_com
+                # else, we implement a P.P.P
+                else:
+                    self.count_grads_next_wait += np.random.poisson(
+                        lam=1 / self.rate_com, size=None
+                    )
         else:
             try:
                 self.barrier_com_grad.wait()
