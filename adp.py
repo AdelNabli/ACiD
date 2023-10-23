@@ -61,15 +61,7 @@ class ADP(nn.Module):
                                          i will wait for j to be available to communicate.
                                          if False, i will communicate faster, by just picking one of its available neighbor. 
         """
-
-        # Check for argument consistency.
-        # first, verify that when we are applying the deterministic algo,
-        # we make a rate_com nb of com for each grad step that is integer.
-        if int(rate_com) != rate_com and deterministic_com:
-            raise ValueError(
-                "A non integer number of communications has been set in a non stochastic setting."
-            )
-
+        
         self.module = model
         self.rank = rank
         self.local_rank = local_rank
