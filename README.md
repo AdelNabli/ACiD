@@ -46,13 +46,13 @@ An example script to launch a SLURM job for training ResNet18 on CIFAR10 using 3
 
 ## Citation
 ```bibtex
-@misc{nabli2023,
-    title={$\textbf{A}^2\textbf{CiD}^2$: Accelerating Asynchronous Communication in Decentralized Deep Learning},
-    author={Adel Nabli and Eugene Belilovsky and Edouard Oyallon},
-    year={2023},
-    eprint={2306.08289},
-    archivePrefix={arXiv},
-    primaryClass={cs.LG}
+@inproceedings{
+nabli2023textbfatextbfcid,
+title={\${\textbackslash}textbf\{A\}{\textasciicircum}2{\textbackslash}textbf\{CiD\}{\textasciicircum}2\$: Accelerating Asynchronous Communication in Decentralized Deep Learning},
+author={Adel Nabli and Eugene Belilovsky and Edouard Oyallon},
+booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+year={2023},
+url={https://openreview.net/forum?id=YE04aRkeZb}
 }
 ```
 
