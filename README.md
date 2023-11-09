@@ -1,6 +1,6 @@
 # ACiD
 
-Implementation of NeurIPS 2023 paper [ACiD: Accelerating Asynchronous Communication in Decentralized Deep Learning](https://arxiv.org/pdf/2306.08289.pdf).
+Implementation of NeurIPS 2023 paper [ACiD: Accelerating Asynchronous Communication in Decentralized Deep Learning](https://openreview.net/pdf?id=YE04aRkeZb).
 
 ## Requirements
 * [pytorch](https://pytorch.org/)
