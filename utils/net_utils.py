@@ -93,14 +93,14 @@ def compute_multiplicative_coef_lr(
     multiplicative_factor = 1
     # create the milestones, depending on the dataset
     if dataset_name == "CIFAR10":
-        # put 2*n_step_tot to be sure the last stage lasts all of the remaining of the training
-        milestones += [int(0.5 * n_step_tot), int(0.75 * n_step_tot), 2 * n_step_tot]
+        # put float('Inf') be sure the last stage lasts all of the remaining of the training
+        milestones += [int(0.5 * n_step_tot), int(0.75 * n_step_tot), float('Inf')]
     else:
         milestones += [
             int(0.3 * n_step_tot),
             int(0.6 * n_step_tot),
             int(0.8 * n_step_tot),
-            2 * n_step_tot,
+            float('Inf'),
         ]
     # create the linear warm up from base lr to the value of
     # lr x (bs/256) x world_size for the 5 first epochs
